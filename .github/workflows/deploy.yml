@@ -51,6 +51,6 @@ jobs:
           cd chart
           git config user.name "github-actions"
           git config user.email "actions@github.com"
-          git add charts/simple-app/values.yaml
+          git add values.yaml
           git commit -m "Update image tag to ${{ env.TAG }}"
           git push
