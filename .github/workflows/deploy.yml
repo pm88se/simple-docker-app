@@ -1,0 +1,56 @@
+name: Build and Deploy Docker Image
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.js'
+      - Dockerfile
+      - package.json
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: pavlom88/simple-docker-app
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Generate unique image tag
+        id: gen_tag
+        run: echo "TAG=v1-$(date +%s)" >> $GITHUB_ENV
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.IMAGE_NAME }}:${{ env.TAG }}
+
+      - name: Clone Helm chart repo
+        uses: actions/checkout@v3
+        with:
+          repository: pm88se/simple-app-chart
+          path: chart
+          ssh-key: ${{ secrets.CHART_REPO_SSH_KEY }}
+
+      - name: Update tag in Helm values.yaml
+        run: |
+          sed -i "s|tag: .*|tag: ${{ env.TAG }}|" chart/charts/simple-app/values.yaml
+
+      - name: Commit and Push updated values.yaml
+        run: |
+          cd chart
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add charts/simple-app/values.yaml
+          git commit -m "Update image tag to ${{ env.TAG }}"
+          git push
