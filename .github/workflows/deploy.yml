@@ -44,7 +44,7 @@ jobs:
 
       - name: Update tag in Helm values.yaml
         run: |
-          sed -i "s|tag: .*|tag: ${{ env.TAG }}|" chart/charts/simple-app/values.yaml
+          sed -i "s|tag: .*|tag: ${{ env.TAG }}|" chart/values.yaml
 
       - name: Commit and Push updated values.yaml
         run: |
